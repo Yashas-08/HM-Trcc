@@ -1,0 +1,31 @@
+:root {
+  --hm-sidebar: #222222;
+  --hm-bg: #F4F4F4;
+  --hm-surface: #FFFFFF;
+  --hm-blue: #B5DDEC;
+  --hm-lime: #DDF58A;
+  --hm-lavender: #CEB5EF;
+  --hm-text-primary: #292929;
+  --hm-text-secondary: #777777;
+  --hm-border: #E9E9E9;
+  --hm-success: #22A06B;
+  --hm-danger: #D9383A;
+  --hm-warning: #C97A16;
+
+  /* Global Typography Tokens */
+  --hm-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --hm-font-slab: 'Roboto Slab', Georgia, serif;
+  --hm-text-page-heading: 30px;
+  --hm-text-section-heading: 22px;
+  --hm-text-card-heading: 18px;
+  --hm-text-stat-value: 32px;
+  --hm-text-sidebar-nav: 16px;
+  --hm-text-sidebar-label: 13px;
+  --hm-text-body: 16px;
+  --hm-text-table-head: 15px;
+  --hm-text-table-cell: 16px;
+  --hm-text-label: 15px;
+  --hm-text-input: 16px;
+  --hm-text-button: 15px;
+  --hm-text-secondary-size: 14px;
+}
