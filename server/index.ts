@@ -23,6 +23,7 @@ import { uploadsRouter } from './routes/uploads.js';
 
 export function createApp() {
   const app = express();
+  app.set('trust proxy', 1);
 
   app.use(
     helmet({
@@ -42,7 +43,7 @@ export function createApp() {
   );
   app.use(
     cors({
-      origin: config.clientOrigin,
+      origin: config.allowedOrigins,
       credentials: true,
     }),
   );
@@ -88,7 +89,7 @@ export function createApp() {
   app.use('/api/uploads', uploadsRouter);
 
   const distDir = path.resolve(process.cwd(), 'dist');
-  if (fs.existsSync(distDir)) {
+  if (!process.env.VERCEL && fs.existsSync(distDir)) {
     app.use(express.static(distDir));
     app.get('*', (req, res, next) => {
       if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
