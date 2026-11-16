@@ -409,39 +409,48 @@ export const RoomsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Room Occupancy Grid */}
-      {filteredRooms.length === 0 ? (
-        <EmptyState
-          icon={BedDouble}
-          title="No rooms found"
-          description="Adjust block/floor filters or search query."
-        />
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-          {filteredRooms.map((room) => {
-            const isMaint = room.status === 'maintenance';
-            const isFull = room.occupied_beds >= room.capacity;
-            const badgeLabel = isMaint ? 'Maint' : isFull ? 'Full' : `${room.available_beds} Free`;
-            const badgeTone = isMaint ? 'warning' : isFull ? 'neutral' : 'success';
-
-            return (
-              <RoomBox
-                key={room.id}
-                roomNumber={room.room_number}
-                primaryMeta={`${room.occupied_beds}/${room.capacity} Beds`}
-                secondaryMeta={room.block_name}
-                badgeLabel={badgeLabel}
-                badgeTone={badgeTone}
-                isSelected={detailRoom?.id === room.id}
-                onClick={() => {
-                  setActionError('');
-                  setDetailRoom(room);
-                }}
-              />
-            );
-          })}
+      {/* Room Numbers Section (3-Column Layout following reference image) */}
+      <div className="bg-[#FFFFFF] border border-[#E9E9E9] rounded-[12px] p-5 mb-5 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-slab text-[20px] font-semibold text-[#292929]">Room Numbers</h2>
+          <span className="text-[14px] text-[#777777]">
+            Showing {filteredRooms.length} {filteredRooms.length === 1 ? 'room' : 'rooms'}
+          </span>
         </div>
-      )}
+
+        {filteredRooms.length === 0 ? (
+          <EmptyState
+            icon={BedDouble}
+            title="No rooms found"
+            description="Adjust block/floor filters or search query."
+          />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {filteredRooms.map((room) => {
+              const isMaint = room.status === 'maintenance';
+              const isFull = room.occupied_beds >= room.capacity;
+              const badgeLabel = isMaint ? 'Maint' : isFull ? 'Full' : `${room.available_beds} Free`;
+              const badgeTone = isMaint ? 'warning' : isFull ? 'neutral' : 'success';
+
+              return (
+                <RoomBox
+                  key={room.id}
+                  roomNumber={room.room_number}
+                  primaryMeta={`${room.occupied_beds}/${room.capacity} Beds Occupied`}
+                  secondaryMeta={`${room.block_name} · ${room.floor_label}`}
+                  badgeLabel={badgeLabel}
+                  badgeTone={badgeTone}
+                  isSelected={detailRoom?.id === room.id}
+                  onClick={() => {
+                    setActionError('');
+                    setDetailRoom(room);
+                  }}
+                />
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Add Block Modal */}
       <Modal

@@ -40,7 +40,7 @@ const NAV_GROUPS: Array<{ title: string; items: NavItem[] }> = [
   {
     title: 'OPERATIONS',
     items: [
-      { label: 'Meal Bookings', to: '/mess', moduleKey: 'mess', icon: Utensils },
+      { label: 'Mess Management', to: '/mess', moduleKey: 'mess', icon: Utensils },
       { label: 'QR Scanner', to: '/qr-scanner', moduleKey: 'qr_scanner', icon: QrCode },
       { label: 'Movement & Attendance', to: '/movements', moduleKey: 'movements', icon: Activity },
       { label: 'Notices', to: '/notices', moduleKey: 'notices', icon: Megaphone },
