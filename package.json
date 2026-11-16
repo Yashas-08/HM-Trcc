@@ -14,7 +14,7 @@
     "build": "tsc --noEmit && tsc -p tsconfig.server.json --noEmit && vite build",
     "start": "tsx server/index.ts",
     "seed": "tsx server/db/seed.ts",
-    "test": "tsx --test server/tests/api.test.ts"
+    "test": "tsx --test server/tests/api.test.ts server/tests/meal-bookings.test.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

@@ -4,6 +4,7 @@ import {
   Building2,
   Edit3,
   Plus,
+  Search,
   Trash2,
   UserPlus,
   Wrench,
@@ -15,6 +16,7 @@ import { StatCard } from '../components/ui/StatCard';
 import { Modal } from '../components/ui/Modal';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { EmptyState, ErrorBanner, LoadingState } from '../components/ui/States';
+import { RoomBox } from '../components/ui/RoomBox';
 
 interface Block {
   id: number;
@@ -84,6 +86,7 @@ export const RoomsPage: React.FC = () => {
   const [selectedBlockId, setSelectedBlockId] = useState<string>('all');
   const [selectedFloorId, setSelectedFloorId] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [roomSearch, setRoomSearch] = useState<string>('');
 
   const [blockModalOpen, setBlockModalOpen] = useState(false);
   const [blockForm, setBlockForm] = useState({ name: '', code: '', description: '', floorCount: 2 });
@@ -277,6 +280,7 @@ export const RoomsPage: React.FC = () => {
     if (selectedBlockId !== 'all' && String(r.block_id) !== selectedBlockId) return false;
     if (selectedFloorId !== 'all' && String(r.floor_id) !== selectedFloorId) return false;
     if (statusFilter !== 'all' && r.status !== statusFilter) return false;
+    if (roomSearch.trim() && !r.room_number.toLowerCase().includes(roomSearch.trim().toLowerCase())) return false;
     return true;
   });
 
@@ -366,6 +370,16 @@ export const RoomsPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          <div className="relative">
+            <input
+              type="text"
+              value={roomSearch}
+              onChange={(e) => setRoomSearch(e.target.value)}
+              placeholder="Search room..."
+              className="w-[150px] sm:w-[170px] h-[40px] pl-9 pr-3 text-[15px] font-normal border border-[#E9E9E9] rounded-[8px] bg-white focus:outline-none focus:border-[#222222]"
+            />
+            <Search className="w-4 h-4 text-[#777777] absolute left-3 top-3 pointer-events-none" />
+          </div>
           <select
             value={selectedFloorId}
             onChange={(e) => setSelectedFloorId(e.target.value)}
@@ -400,140 +414,30 @@ export const RoomsPage: React.FC = () => {
         <EmptyState
           icon={BedDouble}
           title="No rooms found"
-          description="Adjust block/floor filters or add a new room."
+          description="Adjust block/floor filters or search query."
         />
       ) : (
-        <div className="grid grid-cols-3 gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
           {filteredRooms.map((room) => {
-            const pct = room.capacity > 0 ? Math.round((room.occupied_beds / room.capacity) * 100) : 0;
-            const statusText =
-              room.status === 'maintenance'
-                ? 'Maintenance'
-                : room.occupied_beds >= room.capacity
-                  ? 'Full'
-                  : `${room.available_beds} Free`;
-            const statusColor =
-              room.status === 'maintenance'
-                ? 'text-[#C97A16]'
-                : room.occupied_beds >= room.capacity
-                  ? 'text-[#292929]'
-                  : 'text-[#22A06B]';
+            const isMaint = room.status === 'maintenance';
+            const isFull = room.occupied_beds >= room.capacity;
+            const badgeLabel = isMaint ? 'Maint' : isFull ? 'Full' : `${room.available_beds} Free`;
+            const badgeTone = isMaint ? 'warning' : isFull ? 'neutral' : 'success';
 
             return (
-              <div
+              <RoomBox
                 key={room.id}
-                className="bg-[#FFFFFF] border border-[#E9E9E9] rounded-[12px] p-5 flex flex-col justify-between shadow-[0_2px_10px_rgba(0,0,0,0.02)]"
-              >
-                <div>
-                  <div className="flex items-start justify-between gap-2 mb-3">
-                    <div>
-                      <div className="text-[13px] font-semibold uppercase tracking-wide text-[#777777]">
-                        {room.block_name} · {room.floor_label}
-                      </div>
-                      <h3 className="font-slab text-[18px] font-semibold leading-[1.3] text-[#292929]">Room {room.room_number}</h3>
-                    </div>
-                    <span className={`text-[14px] font-semibold leading-[1.35] ${statusColor}`}>{statusText}</span>
-                  </div>
-
-                  {/* Bed Progress */}
-                  <div className="mb-3">
-                    <div className="flex items-center justify-between text-[14px] leading-[1.45] text-[#777777] mb-1">
-                      <span>Occupancy</span>
-                      <span className="font-semibold text-[#292929]">
-                        {room.occupied_beds} / {room.capacity} Beds
-                      </span>
-                    </div>
-                    <div className="h-2 w-full bg-[#F4F4F4] rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${
-                          room.status === 'maintenance'
-                            ? 'bg-[#C97A16]'
-                            : room.occupied_beds >= room.capacity
-                              ? 'bg-[#CEB5EF]'
-                              : 'bg-[#DDF58A]'
-                        }`}
-                        style={{ width: `${room.status === 'maintenance' ? 100 : pct}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Facilities */}
-                  <div className="flex flex-wrap gap-1.5 mb-3">
-                    {room.facilities.slice(0, 4).map((fac) => (
-                      <span
-                        key={fac}
-                        className="px-2.5 py-0.5 text-[13px] bg-[#F4F4F4] text-[#777777] rounded-[6px]"
-                      >
-                        {fac}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Occupants Preview */}
-                  <div className="text-[15px] leading-[1.45] text-[#777777] space-y-1 border-t border-[#E9E9E9] pt-2.5">
-                    {room.occupants.length === 0 ? (
-                      <span className="italic">
-                        {room.status === 'maintenance'
-                          ? room.notes || 'Under maintenance'
-                          : 'No students assigned'}
-                      </span>
-                    ) : (
-                      room.occupants.map((o) => (
-                        <div key={o.allocation_id} className="flex items-center justify-between gap-2 text-[#292929]">
-                          <span className="truncate font-medium">{o.full_name}</span>
-                          <span className="text-[14px] text-[#777777] shrink-0">{o.bed_label}</span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                {/* Card Footer Actions */}
-                <div className="flex items-center justify-between gap-2 pt-4 mt-4 border-t border-[#E9E9E9]">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActionError('');
-                      setDetailRoom(room);
-                    }}
-                    className="px-3.5 py-1.5 text-[15px] font-semibold leading-[1.3] bg-[#F4F4F4] text-[#292929] rounded-[7px] hover:bg-[#E9E9E9]"
-                  >
-                    Manage Beds
-                  </button>
-                  <div className="flex items-center gap-1">
-                    {can('rooms', 'edit') ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => toggleMaintenance(room)}
-                          title={room.status === 'maintenance' ? 'Clear Maintenance' : 'Mark Under Maintenance'}
-                          className="p-1.5 rounded-[6px] text-[#777777] hover:text-[#292929] hover:bg-[#F4F4F4]"
-                        >
-                          <Wrench className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openEditRoom(room)}
-                          title="Edit Room"
-                          className="p-1.5 rounded-[6px] text-[#777777] hover:text-[#292929] hover:bg-[#F4F4F4]"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                      </>
-                    ) : null}
-                    {can('rooms', 'delete') && room.occupied_beds === 0 ? (
-                      <button
-                        type="button"
-                        onClick={() => setDeleteRoomTarget(room)}
-                        title="Delete Unoccupied Room"
-                        className="p-1.5 rounded-[6px] text-[#777777] hover:text-[#D9383A] hover:bg-[#D9383A]/10"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
+                roomNumber={room.room_number}
+                primaryMeta={`${room.occupied_beds}/${room.capacity} Beds`}
+                secondaryMeta={room.block_name}
+                badgeLabel={badgeLabel}
+                badgeTone={badgeTone}
+                isSelected={detailRoom?.id === room.id}
+                onClick={() => {
+                  setActionError('');
+                  setDetailRoom(room);
+                }}
+              />
             );
           })}
         </div>
@@ -755,6 +659,83 @@ export const RoomsPage: React.FC = () => {
         {detailRoom ? (
           <div className="space-y-5">
             {actionError ? <ErrorBanner message={actionError} /> : null}
+
+            {/* Room Overview & Actions */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-[#F4F4F4] rounded-[8px] border border-[#E9E9E9]">
+              <div>
+                <div className="text-[12px] uppercase font-semibold text-[#777777] tracking-wider mb-1">
+                  Status & Details
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span
+                    className={`text-[12px] font-semibold px-2 py-0.5 rounded-[4px] ${
+                      detailRoom.status === 'maintenance'
+                        ? 'bg-[#C97A16]/20 text-[#A05C0B]'
+                        : detailRoom.occupied_beds >= detailRoom.capacity
+                          ? 'bg-[#222222] text-white'
+                          : 'bg-[#DDF58A] text-[#1F7A4A]'
+                    }`}
+                  >
+                    {detailRoom.status === 'maintenance'
+                      ? 'Maintenance'
+                      : detailRoom.occupied_beds >= detailRoom.capacity
+                        ? 'Full'
+                        : `${detailRoom.available_beds} Beds Free`}
+                  </span>
+                  {detailRoom.facilities.map((fac) => (
+                    <span
+                      key={fac}
+                      className="px-2 py-0.5 text-[12px] bg-white text-[#777777] border border-[#E9E9E9] rounded-[4px]"
+                    >
+                      {fac}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                {can('rooms', 'edit') ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => toggleMaintenance(detailRoom)}
+                      title={detailRoom.status === 'maintenance' ? 'Clear Maintenance' : 'Mark Under Maintenance'}
+                      className="px-2.5 py-1.5 rounded-[6px] text-[13px] font-semibold border border-[#E9E9E9] bg-white text-[#292929] hover:bg-[#F9F9F9] flex items-center gap-1"
+                    >
+                      <Wrench className="w-3.5 h-3.5" />
+                      {detailRoom.status === 'maintenance' ? 'Clear Maint' : 'Set Maint'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = detailRoom;
+                        setDetailRoom(null);
+                        openEditRoom(target);
+                      }}
+                      title="Edit Room"
+                      className="px-2.5 py-1.5 rounded-[6px] text-[13px] font-semibold border border-[#E9E9E9] bg-white text-[#292929] hover:bg-[#F9F9F9] flex items-center gap-1"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      Edit
+                    </button>
+                  </>
+                ) : null}
+                {can('rooms', 'delete') && detailRoom.occupied_beds === 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const target = detailRoom;
+                      setDetailRoom(null);
+                      setDeleteRoomTarget(target);
+                    }}
+                    title="Delete Unoccupied Room"
+                    className="p-1.5 rounded-[6px] text-[#D9383A] hover:bg-[#D9383A]/10 border border-[#D9383A]/30"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                ) : null}
+              </div>
+            </div>
 
             <div>
               <h3 className="font-slab text-[15px] font-normal uppercase tracking-wide text-[#777777] mb-2">

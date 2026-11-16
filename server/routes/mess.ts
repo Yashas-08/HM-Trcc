@@ -20,8 +20,14 @@ messRouter.get('/overview', requirePermission('mess', 'view'), (req, res) => {
   const today = dateStr(0);
   const tomorrow = dateStr(1);
 
-  const dateCategory =
-    req.query.dateCategory === 'yesterday'
+  const reqDate =
+    typeof req.query.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(req.query.date.trim())
+      ? req.query.date.trim()
+      : null;
+
+  const targetDate = reqDate
+    ? reqDate
+    : req.query.dateCategory === 'yesterday'
       ? yesterday
       : req.query.dateCategory === 'tomorrow'
         ? tomorrow
@@ -29,6 +35,8 @@ messRouter.get('/overview', requirePermission('mess', 'view'), (req, res) => {
 
   const mealTypeFilter = typeof req.query.mealType === 'string' ? req.query.mealType : 'all';
   const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+  const roomId = req.query.roomId ? Number(req.query.roomId) : null;
+  const roomNumber = typeof req.query.roomNumber === 'string' ? req.query.roomNumber.trim() : '';
 
   const settings = db
     .prepare(
@@ -38,19 +46,27 @@ messRouter.get('/overview', requirePermission('mess', 'view'), (req, res) => {
     .get();
 
   const menus = db
-    .prepare('SELECT * FROM mess_menus WHERE menu_date IN (?, ?, ?) ORDER BY menu_date ASC')
-    .all(yesterday, today, tomorrow);
+    .prepare('SELECT * FROM mess_menus WHERE menu_date IN (?, ?, ?) OR menu_date = ? ORDER BY menu_date ASC')
+    .all(yesterday, today, tomorrow, targetDate);
 
   const conds = ['mb.meal_date = ?'];
-  const params: Array<string | number> = [dateCategory];
+  const params: Array<string | number> = [targetDate];
   if (mealTypeFilter !== 'all') {
     conds.push('mb.meal_type = ?');
     params.push(mealTypeFilter);
   }
+  if (roomId) {
+    conds.push('r.id = ?');
+    params.push(roomId);
+  }
+  if (roomNumber) {
+    conds.push('r.room_number = ?');
+    params.push(roomNumber);
+  }
   if (q) {
     const like = `%${q}%`;
-    conds.push('(s.full_name LIKE ? OR s.student_code LIKE ? OR mb.booking_code LIKE ?)');
-    params.push(like, like, like);
+    conds.push('(s.full_name LIKE ? OR s.student_code LIKE ? OR mb.booking_code LIKE ? OR r.room_number LIKE ?)');
+    params.push(like, like, like, like);
   }
 
   const bookings = db
@@ -59,13 +75,14 @@ messRouter.get('/overview', requirePermission('mess', 'view'), (req, res) => {
          mb.*,
          s.student_code,
          s.full_name AS student_name,
-         COALESCE(r.room_number, '--') AS room_number
+         COALESCE(r.room_number, '--') AS room_number,
+         r.id AS room_id
        FROM meal_bookings mb
        JOIN students s ON s.id = mb.student_id
        LEFT JOIN room_allocations ra ON ra.student_id = s.id AND ra.is_active = 1
        LEFT JOIN rooms r ON r.id = ra.room_id
        WHERE ${conds.join(' AND ')}
-       ORDER BY mb.id DESC`,
+       ORDER BY CAST(r.room_number AS INTEGER) ASC, mb.id DESC`,
     )
     .all(...params);
 
@@ -81,15 +98,58 @@ messRouter.get('/overview', requirePermission('mess', 'view'), (req, res) => {
        FROM meal_bookings
        WHERE meal_date = ?`,
     )
-    .get(dateCategory);
+    .get(targetDate);
+
+  const roomSummaryParams = mealTypeFilter !== 'all' ? [targetDate, mealTypeFilter] : [targetDate];
+  const roomSummary = db
+    .prepare(
+      `SELECT
+         r.id AS room_id,
+         r.room_number,
+         r.block_id,
+         b.name AS block_name,
+         COUNT(mb.id) AS total_bookings,
+         SUM(CASE WHEN mb.verified_status = 'served' THEN 1 ELSE 0 END) AS served_count,
+         SUM(CASE WHEN mb.booking_status = 'booked' AND mb.verified_status != 'served' THEN 1 ELSE 0 END) AS pending_count
+       FROM meal_bookings mb
+       JOIN students s ON s.id = mb.student_id
+       JOIN room_allocations ra ON ra.student_id = s.id AND ra.is_active = 1
+       JOIN rooms r ON r.id = ra.room_id
+       JOIN blocks b ON b.id = r.block_id
+       WHERE mb.meal_date = ? AND mb.booking_status = 'booked'
+         ${mealTypeFilter !== 'all' ? 'AND mb.meal_type = ?' : ''}
+       GROUP BY r.id, r.room_number, r.block_id, b.name
+       ORDER BY CAST(r.room_number AS INTEGER) ASC, r.room_number ASC`,
+    )
+    .all(...roomSummaryParams);
+
+  const roomMealSummary = db
+    .prepare(
+      `SELECT
+         r.id AS room_id,
+         r.room_number,
+         mb.meal_type,
+         COUNT(mb.id) AS total_bookings,
+         SUM(CASE WHEN mb.verified_status = 'served' THEN 1 ELSE 0 END) AS served_count,
+         SUM(CASE WHEN mb.booking_status = 'booked' AND mb.verified_status != 'served' THEN 1 ELSE 0 END) AS pending_count
+       FROM meal_bookings mb
+       JOIN students s ON s.id = mb.student_id
+       JOIN room_allocations ra ON ra.student_id = s.id AND ra.is_active = 1
+       JOIN rooms r ON r.id = ra.room_id
+       WHERE mb.meal_date = ? AND mb.booking_status = 'booked'
+       GROUP BY r.id, r.room_number, mb.meal_type`,
+    )
+    .all(targetDate);
 
   res.json({
     dates: { yesterday, today, tomorrow },
-    selectedDate: dateCategory,
+    selectedDate: targetDate,
     settings,
     menus,
     bookings,
     summary,
+    room_summary: roomSummary,
+    room_meal_summary: roomMealSummary,
   });
 });
 
@@ -245,23 +305,24 @@ messRouter.patch('/bookings/:id/cancel', requirePermission('mess', 'edit'), (req
   res.json({ success: true });
 });
 
-// QR Scanner Verification (Module 4.7)
+// QR Scanner Verification (Module 4.7) & Table Verification
 messRouter.post('/qr/verify', requirePermission('qr_scanner', 'create'), (req: AuthenticatedRequest, res) => {
   const schema = z.object({
     qr_token: z.string().optional(),
     student_lookup: z.string().optional(),
+    booking_id: z.number().int().positive().optional(),
     meal_type: z.enum(['breakfast', 'lunch', 'dinner']),
   });
   const parsed = schema.safeParse(req.body);
-  if (!parsed.success || (!parsed.data.qr_token && !parsed.data.student_lookup)) {
-    res.status(400).json({ error: 'Provide either a QR code token or Student ID / name lookup' });
+  if (!parsed.success || (!parsed.data.qr_token && !parsed.data.student_lookup && !parsed.data.booking_id)) {
+    res.status(400).json({ error: 'Provide either a QR code token, Student ID / name lookup, or booking_id' });
     return;
   }
 
   const db = getDb();
   const today = dateStr(0);
-  const { qr_token, student_lookup, meal_type } = parsed.data;
-  const rawInput = (qr_token || student_lookup || '').trim();
+  const { qr_token, student_lookup, booking_id, meal_type } = parsed.data;
+  const rawInput = (qr_token || student_lookup || (booking_id ? `ID-${booking_id}` : '')).trim();
 
   type BookingLookupRow = {
     id: number;
@@ -279,7 +340,20 @@ messRouter.post('/qr/verify', requirePermission('qr_scanner', 'create'), (req: A
   };
 
   let booking: BookingLookupRow | undefined;
-  if (qr_token) {
+  if (booking_id) {
+    booking = db
+      .prepare(
+        `SELECT
+           mb.*, s.student_code, s.full_name AS student_name,
+           COALESCE(r.room_number, '--') AS room_number
+         FROM meal_bookings mb
+         JOIN students s ON s.id = mb.student_id
+         LEFT JOIN room_allocations ra ON ra.student_id = s.id AND ra.is_active = 1
+         LEFT JOIN rooms r ON r.id = ra.room_id
+         WHERE mb.id = ?`,
+      )
+      .get(booking_id) as BookingLookupRow | undefined;
+  } else if (qr_token) {
     booking = db
       .prepare(
         `SELECT
@@ -342,26 +416,28 @@ messRouter.post('/qr/verify', requirePermission('qr_scanner', 'create'), (req: A
     return;
   }
 
-  if (booking.meal_date < today || booking.verified_status === 'expired') {
-    const msg = `Booking ${booking.booking_code} expired (${booking.meal_date}).`;
-    recordScan('expired', msg, booking);
-    res.status(400).json({
-      result: 'expired',
-      message: msg,
-      verification: booking,
-    });
-    return;
-  }
+  if (!booking_id) {
+    if (booking.meal_date < today || booking.verified_status === 'expired') {
+      const msg = `Booking ${booking.booking_code} expired (${booking.meal_date}).`;
+      recordScan('expired', msg, booking);
+      res.status(400).json({
+        result: 'expired',
+        message: msg,
+        verification: booking,
+      });
+      return;
+    }
 
-  if (booking.meal_date > today) {
-    const msg = `Booking is scheduled for ${booking.meal_date} and cannot be served today.`;
-    recordScan('invalid', msg, booking);
-    res.status(400).json({
-      result: 'invalid',
-      message: msg,
-      verification: booking,
-    });
-    return;
+    if (booking.meal_date > today) {
+      const msg = `Booking is scheduled for ${booking.meal_date} and cannot be served today.`;
+      recordScan('invalid', msg, booking);
+      res.status(400).json({
+        result: 'invalid',
+        message: msg,
+        verification: booking,
+      });
+      return;
+    }
   }
 
   if (booking.verified_status === 'served') {
@@ -397,6 +473,86 @@ messRouter.post('/qr/verify', requirePermission('qr_scanner', 'create'), (req: A
     result: 'success',
     message: `${booking.meal_type.toUpperCase()} verified and marked as served.`,
     verification: {
+      ...booking,
+      verified_status: 'served',
+      verified_at: nowTs,
+    },
+  });
+});
+
+// Direct student booking verification from room view table
+messRouter.patch('/bookings/:id/verify', requirePermission('mess', 'edit'), (req: AuthenticatedRequest, res) => {
+  const id = Number(req.params.id);
+  const db = getDb();
+  type BookingRow = {
+    id: number;
+    booking_code: string;
+    student_id: number;
+    meal_date: string;
+    meal_type: string;
+    qr_token: string;
+    booking_status: string;
+    verified_status: string;
+    verified_at: string | null;
+    student_code: string;
+    student_name: string;
+    room_number: string;
+  };
+
+  const booking = db
+    .prepare(
+      `SELECT
+         mb.*, s.student_code, s.full_name AS student_name,
+         COALESCE(r.room_number, '--') AS room_number
+       FROM meal_bookings mb
+       JOIN students s ON s.id = mb.student_id
+       LEFT JOIN room_allocations ra ON ra.student_id = s.id AND ra.is_active = 1
+       LEFT JOIN rooms r ON r.id = ra.room_id
+       WHERE mb.id = ?`,
+    )
+    .get(id) as BookingRow | undefined;
+
+  if (!booking || booking.booking_status === 'cancelled') {
+    res.status(404).json({ error: 'Active booking not found' });
+    return;
+  }
+
+  if (booking.verified_status === 'served') {
+    res.status(409).json({ error: `Already verified at ${booking.verified_at}` });
+    return;
+  }
+
+  const nowTs = new Date().toISOString().slice(0, 16);
+  db.transaction(() => {
+    db.prepare(
+      "UPDATE meal_bookings SET verified_status = 'served', verified_at = ?, verified_by = ? WHERE id = ?",
+    ).run(nowTs, req.user!.id, id);
+
+    db.prepare(
+      `INSERT INTO meal_scans (qr_token_raw, booking_id, student_id, meal_type, scan_result, message, scanned_by)
+       VALUES (?, ?, ?, ?, 'success', ?, ?)`,
+    ).run(
+      booking.qr_token,
+      booking.id,
+      booking.student_id,
+      booking.meal_type,
+      `Direct verification for ${booking.student_name} (${booking.booking_code})`,
+      req.user!.id,
+    );
+
+    logActivity({
+      user: req.user,
+      module: 'mess',
+      action: 'VERIFY_BOOKING',
+      entityType: 'meal_booking',
+      entityId: booking.booking_code,
+      details: `Direct verification of ${booking.meal_type} booking ${booking.booking_code} for ${booking.student_name}`,
+    });
+  })();
+
+  res.json({
+    success: true,
+    booking: {
       ...booking,
       verified_status: 'served',
       verified_at: nowTs,

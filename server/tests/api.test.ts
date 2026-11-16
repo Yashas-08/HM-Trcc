@@ -1,9 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import Database from 'better-sqlite3';
 import { initializeSchema } from '../db/schema.js';
-import { setDbForTest } from '../db/database.js';
+import { createDatabase, setDbForTest } from '../db/database.js';
 import { seedDatabase } from '../db/seed.js';
 import { createApp } from '../index.js';
 
@@ -27,7 +26,7 @@ async function apiReq(
 }
 
 test.before(async () => {
-  const memDb = new Database(':memory:');
+  const memDb = createDatabase(':memory:');
   initializeSchema(memDb);
   setDbForTest(memDb);
   seedDatabase(memDb);
@@ -229,10 +228,19 @@ test('Auth, RBAC, and all core hostel workflows operate end-to-end with DB persi
 
   // Verify a seeded pending dinner QR token once -> succeeds, second scan -> duplicate
   const messData = await apiReq('/api/mess/overview?dateCategory=today', { token: messToken });
-  const pendingDinner = (messData.data?.bookings as Array<{ qr_token: string; meal_type: string; verified_status: string }>).find(
+  assert.ok(Array.isArray(messData.data?.room_summary));
+  assert.ok((messData.data?.room_summary as Array<{ room_number: string; total_bookings: number }>).length > 0);
+  const pendingDinner = (messData.data?.bookings as Array<{ id: number; qr_token: string; meal_type: string; verified_status: string; room_number: string }>).find(
     (b) => b.meal_type === 'dinner' && b.verified_status === 'pending',
   );
   assert.ok(pendingDinner);
+
+  // Test server-side filtering by roomId
+  const filteredByRoom = await apiReq(`/api/mess/overview?date=${today}&roomNumber=${pendingDinner.room_number}`, { token: messToken });
+  assert.equal(filteredByRoom.status, 200);
+  const roomBookings = filteredByRoom.data?.bookings as Array<{ room_number: string }>;
+  assert.ok(roomBookings.length > 0);
+  assert.ok(roomBookings.every((b) => b.room_number === pendingDinner.room_number));
 
   const firstScan = await apiReq('/api/mess/qr/verify', {
     method: 'POST',
@@ -249,6 +257,23 @@ test('Auth, RBAC, and all core hostel workflows operate end-to-end with DB persi
   });
   assert.equal(secondScan.status, 409);
   assert.equal(secondScan.data?.result, 'duplicate');
+
+  // Direct table verification of individual student booking
+  const pendingBreakfast = (messData.data?.bookings as Array<{ id: number; meal_type: string; verified_status: string }>).find(
+    (b) => b.meal_type === 'breakfast' && b.verified_status === 'pending',
+  );
+  if (pendingBreakfast) {
+    const directVerify = await apiReq(`/api/mess/bookings/${pendingBreakfast.id}/verify`, {
+      method: 'PATCH',
+      token: messToken,
+    });
+    assert.equal(directVerify.status, 200);
+    const dupDirectVerify = await apiReq(`/api/mess/bookings/${pendingBreakfast.id}/verify`, {
+      method: 'PATCH',
+      token: messToken,
+    });
+    assert.equal(dupDirectVerify.status, 409);
+  }
 
   // 7. Reports & Settings Activity Logs
   const reportsRes = await apiReq('/api/reports', { token: adminToken });
