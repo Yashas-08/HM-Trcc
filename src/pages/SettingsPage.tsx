@@ -480,7 +480,7 @@ export const SettingsPage: React.FC = () => {
                 </div>
                 <div className="px-4 py-3 flex justify-between gap-4">
                   <span className="font-semibold">Mess Staff</span>
-                  <span className="text-[14px] text-[#777777] text-right">Daily menus, meal bookings & QR meal verification</span>
+                  <span className="text-[14px] text-[#777777] text-right">Meal bookings & QR meal verification</span>
                 </div>
                 <div className="px-4 py-3 flex justify-between gap-4">
                   <span className="font-semibold">Security Staff</span>

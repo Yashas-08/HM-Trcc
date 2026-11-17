@@ -153,7 +153,11 @@ messRouter.get('/overview', requirePermission('mess', 'view'), (req, res) => {
   });
 });
 
+/**
+ * @deprecated Menu editor cards have been removed from the UI. Kept for backwards compatibility only.
+ */
 messRouter.put('/menus', requirePermission('mess', 'edit'), (req: AuthenticatedRequest, res) => {
+  res.setHeader('X-Deprecated', 'true');
   const schema = z.object({
     menu_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     meal_type: z.enum(['breakfast', 'lunch', 'dinner']),
