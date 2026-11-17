@@ -126,6 +126,85 @@ dashboardRouter.get('/', (req: AuthenticatedRequest, res) => {
     )
     .all(attendanceDate);
 
+  const leavesQuery = `
+    SELECT
+      lr.id,
+      s.full_name AS student_name,
+      COALESCE(r.room_number, alloc_r.room_number, '--') AS room_number,
+      lr.departure_at,
+      lr.expected_return_at,
+      CASE WHEN lr.guardian_contact_verified = 1 THEN 'Parent Approved' ELSE 'Awaiting Parent' END AS parent_status,
+      lr.status
+    FROM leave_requests lr
+    JOIN students s ON s.id = lr.student_id
+    LEFT JOIN rooms r ON r.id = lr.room_id
+    LEFT JOIN room_allocations ra ON ra.student_id = lr.student_id AND ra.is_active = 1
+    LEFT JOIN rooms alloc_r ON alloc_r.id = ra.room_id
+  `;
+
+  let dailyLeaves = db
+    .prepare(
+      `${leavesQuery}
+       WHERE (substr(lr.departure_at, 1, 10) <= ? AND substr(lr.expected_return_at, 1, 10) >= ?)
+          OR substr(lr.created_at, 1, 10) = ?
+       ORDER BY lr.id DESC
+       LIMIT 6`,
+    )
+    .all(attendanceDate, attendanceDate, attendanceDate) as Array<{
+      id: number;
+      student_name: string;
+      room_number: string;
+      departure_at: string;
+      expected_return_at: string;
+      parent_status: 'Parent Approved' | 'Awaiting Parent';
+      status: 'approved' | 'pending' | 'rejected' | 'completed';
+    }>;
+
+  if (dailyLeaves.length === 0 && attendanceDate === today) {
+    dailyLeaves = db
+      .prepare(`${leavesQuery} ORDER BY lr.id DESC LIMIT 6`)
+      .all() as typeof dailyLeaves;
+  }
+
+  const complaintsQuery = `
+    SELECT
+      c.id,
+      s.full_name AS student_name,
+      COALESCE(r.room_number, alloc_r.room_number, '--') AS room_number,
+      c.category,
+      c.title,
+      c.created_at,
+      c.status
+    FROM complaints c
+    JOIN students s ON s.id = c.student_id
+    LEFT JOIN rooms r ON r.id = c.room_id
+    LEFT JOIN room_allocations ra ON ra.student_id = c.student_id AND ra.is_active = 1
+    LEFT JOIN rooms alloc_r ON alloc_r.id = ra.room_id
+  `;
+
+  let dailyComplaints = db
+    .prepare(
+      `${complaintsQuery}
+       WHERE substr(c.created_at, 1, 10) = ?
+       ORDER BY c.id DESC
+       LIMIT 6`,
+    )
+    .all(attendanceDate) as Array<{
+      id: number;
+      student_name: string;
+      room_number: string;
+      category: string;
+      title: string;
+      created_at: string;
+      status: 'open' | 'assigned' | 'in_progress' | 'resolved' | 'reopened';
+    }>;
+
+  if (dailyComplaints.length === 0 && attendanceDate === today) {
+    dailyComplaints = db
+      .prepare(`${complaintsQuery} ORDER BY c.id DESC LIMIT 6`)
+      .all() as typeof dailyComplaints;
+  }
+
   const occupiedBeds = occupiedRow.occupied_beds;
   const availableBeds = Math.max(0, roomStats.operational_beds - occupiedBeds);
   const occDenom = occupiedBeds + availableBeds || 1;
@@ -180,6 +259,8 @@ dashboardRouter.get('/', (req: AuthenticatedRequest, res) => {
     },
     attendanceDate,
     attendanceRows,
+    dailyLeaves,
+    dailyComplaints,
     recentActivities,
   });
 });

@@ -82,6 +82,24 @@ export interface DashboardData {
     check_out_time: string;
     status: 'present' | 'absent' | 'on_leave';
   }>;
+  dailyLeaves?: Array<{
+    id: number;
+    student_name: string;
+    room_number: string;
+    departure_at: string;
+    expected_return_at: string;
+    parent_status: 'Parent Approved' | 'Awaiting Parent';
+    status: 'approved' | 'pending' | 'rejected' | 'completed';
+  }>;
+  dailyComplaints?: Array<{
+    id: number;
+    student_name: string;
+    room_number: string;
+    category: string;
+    title: string;
+    created_at: string;
+    status: 'open' | 'assigned' | 'in_progress' | 'resolved' | 'reopened';
+  }>;
   recentActivities: Array<{
     id: number;
     user_name: string;

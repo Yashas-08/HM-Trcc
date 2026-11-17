@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BedDouble, ChevronLeft, ChevronRight, MessageSquareWarning, Users } from 'lucide-react';
+import { ArrowRight, BedDouble, ChevronLeft, ChevronRight, MessageSquareWarning, Users } from 'lucide-react';
 import { api } from '../lib/api';
 import type { DashboardData } from '../types';
 import { StatCard } from '../components/ui/StatCard';
@@ -25,6 +25,7 @@ function shiftDate(iso: string, delta: number): string {
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const [attendanceDate, setAttendanceDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [activeTab, setActiveTab] = useState<'leaves' | 'complaints'>('leaves');
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -90,76 +91,192 @@ export const DashboardPage: React.FC = () => {
           {/* Row 2: Monthly Admissions vs Departures Bar Chart */}
           <AdmissionsBarChart data={data.admissionsVsDepartures} />
 
-          {/* Row 3: Student Attendance Table */}
-          <div className="bg-[#FFFFFF] border border-[#E9E9E9] rounded-[12px] p-5 shadow-[0_2px_10px_rgba(0,0,0,0.025)] flex-1">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-slab text-[18px] font-semibold leading-[1.3] text-[#292929]">Student Attendance</h2>
-              <div className="flex items-center gap-2 text-[14px] leading-[1.35] text-[#777777]">
+          {/* Row 3: Daily Updates Tabbed Action Table */}
+          <div className="bg-[#FFFFFF] border border-[#E9E9E9] rounded-[12px] p-5 shadow-[0_2px_10px_rgba(0,0,0,0.025)] flex-1 flex flex-col">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <div className="flex items-center gap-4">
+                <h2 className="font-slab text-[18px] font-semibold leading-[1.3] text-[#292929]">Daily Updates</h2>
+                <div className="inline-flex items-center p-1 bg-[#F5F5F4] rounded-full gap-1 border border-[#E9E9E9]">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('leaves')}
+                    className={`px-3 py-1 rounded-full text-[13px] font-medium transition-all ${
+                      activeTab === 'leaves'
+                        ? 'bg-[#405B35] text-white shadow-sm'
+                        : 'text-[#666666] hover:text-[#292929]'
+                    }`}
+                  >
+                    Leave Intimations ({data.dailyLeaves?.length ?? 0})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('complaints')}
+                    className={`px-3 py-1 rounded-full text-[13px] font-medium transition-all ${
+                      activeTab === 'complaints'
+                        ? 'bg-[#405B35] text-white shadow-sm'
+                        : 'text-[#666666] hover:text-[#292929]'
+                    }`}
+                  >
+                    Recent Complaints ({data.dailyComplaints?.length ?? 0})
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 text-[14px] leading-[1.35] text-[#777777] bg-[#FAFAFA] px-2 py-1 rounded border border-[#E9E9E9]">
+                  <button
+                    type="button"
+                    onClick={() => setAttendanceDate((d) => shiftDate(d, -1))}
+                    aria-label="Previous day"
+                    className="p-1 rounded hover:bg-[#EAEAEA] text-[#292929] transition-colors"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <span className="font-medium text-[#292929] min-w-[96px] text-center text-[13px]">
+                    {formatDate(data.attendanceDate)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setAttendanceDate((d) => shiftDate(d, 1))}
+                    aria-label="Next day"
+                    className="p-1 rounded hover:bg-[#EAEAEA] text-[#292929] transition-colors"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+
                 <button
                   type="button"
-                  onClick={() => setAttendanceDate((d) => shiftDate(d, -1))}
-                  aria-label="Previous attendance day"
-                  className="p-1.5 rounded hover:bg-[#F4F4F4] text-[#292929]"
+                  onClick={() => navigate(activeTab === 'leaves' ? '/leaves' : '/complaints')}
+                  className="text-[#405B35] hover:text-[#2D4025] hover:underline text-[13px] font-semibold flex items-center gap-1 ml-1"
                 >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <span className="font-medium text-[#292929] min-w-[104px] text-center">
-                  {formatDate(data.attendanceDate)}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setAttendanceDate((d) => shiftDate(d, 1))}
-                  aria-label="Next attendance day"
-                  className="p-1.5 rounded hover:bg-[#F4F4F4] text-[#292929]"
-                >
-                  <ChevronRight className="w-4 h-4" />
+                  <span>View All</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
 
-            {data.attendanceRows.length === 0 ? (
-              <div className="py-10 text-center text-[16px] leading-[1.5] text-[#777777]">
-                No student attendance records for this date.
-              </div>
+            {activeTab === 'leaves' ? (
+              (!data.dailyLeaves || data.dailyLeaves.length === 0) ? (
+                <div className="py-10 text-center text-[15px] leading-[1.5] text-[#777777] flex-1 flex items-center justify-center">
+                  No leave intimations for {formatDate(data.attendanceDate)}.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse text-left">
+                    <thead>
+                      <tr className="border-b border-[#E9E9E9]">
+                        <th className="py-3 px-2 text-[14px] font-semibold leading-[1.35] text-[#292929] w-[44px]">#</th>
+                        <th className="py-3 text-[14px] font-semibold leading-[1.35] text-[#292929]">Student Name</th>
+                        <th className="py-3 text-[14px] font-semibold leading-[1.35] text-[#292929]">Room No</th>
+                        <th className="py-3 text-[14px] font-semibold leading-[1.35] text-[#292929]">Leave Dates</th>
+                        <th className="py-3 text-[14px] font-semibold leading-[1.35] text-[#292929]">Parent Status</th>
+                        <th className="py-3 text-[14px] font-semibold leading-[1.35] text-[#292929] text-right">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#E9E9E9]">
+                      {data.dailyLeaves.map((row, index) => (
+                        <tr
+                          key={row.id}
+                          onClick={() => navigate('/leaves')}
+                          className="cursor-pointer hover:bg-[#FAFAFA] transition-colors"
+                        >
+                          <td className="py-3 px-2 text-[14px] font-semibold text-[#777777]">{index + 1}</td>
+                          <td className="py-3 text-[15px] leading-[1.45] text-[#292929] font-medium">{row.student_name}</td>
+                          <td className="py-3 text-[15px] leading-[1.45] text-[#777777]">{row.room_number}</td>
+                          <td className="py-3 text-[14px] leading-[1.45] text-[#555555]">
+                            {formatDate(row.departure_at)} - {formatDate(row.expected_return_at)}
+                          </td>
+                          <td className="py-3 text-[13px] leading-[1.35]">
+                            {row.parent_status === 'Parent Approved' ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[12px] font-medium bg-[#EAF4E2] text-[#405B35]">
+                                Parent Approved
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[12px] font-medium bg-[#FEF3C7] text-[#C97A16]">
+                                Awaiting Parent
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 text-[13px] font-semibold leading-[1.35] text-right">
+                            {row.status === 'approved' ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-medium bg-[#E6F7ED] text-[#22A06B] capitalize">
+                                Approved
+                              </span>
+                            ) : row.status === 'pending' ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-medium bg-[#FEF3C7] text-[#C97A16] capitalize">
+                                Pending
+                              </span>
+                            ) : row.status === 'rejected' ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-medium bg-[#FEE2E2] text-[#D9383A] capitalize">
+                                Rejected
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-medium bg-[#F3F4F6] text-[#6B7280] capitalize">
+                                {row.status}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )
             ) : (
-              <table className="w-full border-collapse text-left">
-                <thead>
-                  <tr className="border-b border-[#E9E9E9]">
-                    <th className="py-3 px-2 text-[15px] font-semibold leading-[1.35] text-[#292929] w-[44px]">#</th>
-                    <th className="py-3 text-[15px] font-semibold leading-[1.35] text-[#292929]">Name</th>
-                    <th className="py-3 text-[15px] font-semibold leading-[1.35] text-[#292929]">Room no</th>
-                    <th className="py-3 text-[15px] font-semibold leading-[1.35] text-[#292929]">Check in</th>
-                    <th className="py-3 text-[15px] font-semibold leading-[1.35] text-[#292929]">Checkout</th>
-                    <th className="py-3 text-[15px] font-semibold leading-[1.35] text-[#292929] text-right">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E9E9E9]">
-                  {data.attendanceRows.map((row, index) => (
-                    <tr
-                      key={row.student_id}
-                      onClick={() => navigate('/movements')}
-                      className="cursor-pointer hover:bg-[#FAFAFA] transition-colors"
-                    >
-                      <td className="py-3.5 px-2 text-[14px] font-semibold text-[#777777]">{index + 1}</td>
-                      <td className="py-3.5 text-[16px] leading-[1.45] text-[#292929] font-medium">{row.full_name}</td>
-                      <td className="py-3.5 text-[16px] leading-[1.45] text-[#777777]">{row.room_number}</td>
-                      <td className="py-3.5 text-[16px] leading-[1.45] text-[#777777]">{row.check_in_time}</td>
-                      <td className="py-3.5 text-[16px] leading-[1.45] text-[#777777]">{row.check_out_time}</td>
-                      <td className="py-3.5 text-[14px] font-semibold leading-[1.35] text-right">
-                        {row.status === 'present' ? (
-                          <span className="text-[#22A06B]">Present</span>
-                        ) : row.status === 'on_leave' ? (
-                          <span className="text-[#C97A16]">On Leave</span>
-                        ) : (
-                          <span className="text-[#D9383A]">Absent</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              (!data.dailyComplaints || data.dailyComplaints.length === 0) ? (
+                <div className="py-10 text-center text-[15px] leading-[1.5] text-[#777777] flex-1 flex items-center justify-center">
+                  No complaints recorded for {formatDate(data.attendanceDate)}.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse text-left">
+                    <thead>
+                      <tr className="border-b border-[#E9E9E9]">
+                        <th className="py-3 px-2 text-[14px] font-semibold leading-[1.35] text-[#292929] w-[44px]">#</th>
+                        <th className="py-3 text-[14px] font-semibold leading-[1.35] text-[#292929]">Student Name</th>
+                        <th className="py-3 text-[14px] font-semibold leading-[1.35] text-[#292929]">Room No</th>
+                        <th className="py-3 text-[14px] font-semibold leading-[1.35] text-[#292929]">Category / Issue</th>
+                        <th className="py-3 text-[14px] font-semibold leading-[1.35] text-[#292929]">Raised On</th>
+                        <th className="py-3 text-[14px] font-semibold leading-[1.35] text-[#292929] text-right">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#E9E9E9]">
+                      {data.dailyComplaints.map((row, index) => (
+                        <tr
+                          key={row.id}
+                          onClick={() => navigate('/complaints')}
+                          className="cursor-pointer hover:bg-[#FAFAFA] transition-colors"
+                        >
+                          <td className="py-3 px-2 text-[14px] font-semibold text-[#777777]">{index + 1}</td>
+                          <td className="py-3 text-[15px] leading-[1.45] text-[#292929] font-medium">{row.student_name}</td>
+                          <td className="py-3 text-[15px] leading-[1.45] text-[#777777]">{row.room_number}</td>
+                          <td className="py-3 text-[14px] leading-[1.45]">
+                            <span className="font-medium text-[#292929]">{row.category}</span>
+                            <span className="text-[#777777] ml-1.5">- {row.title}</span>
+                          </td>
+                          <td className="py-3 text-[14px] leading-[1.45] text-[#555555]">{formatDate(row.created_at)}</td>
+                          <td className="py-3 text-[13px] font-semibold leading-[1.35] text-right">
+                            {row.status === 'resolved' ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-medium bg-[#E6F7ED] text-[#22A06B] capitalize">
+                                Resolved
+                              </span>
+                            ) : row.status === 'in_progress' || row.status === 'assigned' ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-medium bg-[#FEF3C7] text-[#C97A16] capitalize">
+                                {row.status === 'in_progress' ? 'In Progress' : 'Assigned'}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-medium bg-[#EFF6FF] text-[#2563EB] capitalize">
+                                {row.status}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )
             )}
           </div>
         </div>

@@ -281,5 +281,13 @@ test('Auth, RBAC, and all core hostel workflows operate end-to-end with DB persi
   const settingsRes = await apiReq('/api/settings', { token: adminToken });
   assert.equal(settingsRes.status, 200);
   assert.ok((settingsRes.data?.activityLogs as unknown[]).length > 0);
+
+  // 8. Dashboard Daily Updates tabbed action table verification
+  const dashRes = await apiReq('/api/dashboard', { token: adminToken });
+  assert.equal(dashRes.status, 200);
+  assert.ok(Array.isArray(dashRes.data?.dailyLeaves));
+  assert.ok(Array.isArray(dashRes.data?.dailyComplaints));
+  assert.ok(dashRes.data?.dailyLeaves.length > 0);
+  assert.ok(dashRes.data?.dailyComplaints.length > 0);
 });
 
