@@ -5,6 +5,7 @@ import { api } from '../lib/api';
 import { PageHeader } from '../components/ui/PageHeader';
 import { DataTable, type TableColumn } from '../components/ui/DataTable';
 import { EmptyState, ErrorBanner } from '../components/ui/States';
+import { formatDateTime } from '../utils/date';
 
 interface VerificationResponse {
   result: 'success' | 'invalid' | 'expired' | 'duplicate';
@@ -206,6 +207,12 @@ export const QrScannerPage: React.FC = () => {
 
   const scanCols: TableColumn<ScanHistoryRow>[] = [
     {
+      key: 'serial',
+      header: 'S.No',
+      width: '64px',
+      render: (_r, index) => <span className="font-semibold text-[#777777] text-[14px]">{index + 1}</span>,
+    },
+    {
       key: 'student',
       header: 'Student',
       render: (r) => (
@@ -241,7 +248,7 @@ export const QrScannerPage: React.FC = () => {
       key: 'time',
       header: 'Timestamp',
       align: 'right',
-      render: (r) => <span className="text-[14px] leading-[1.45] text-[#777777]">{r.scanned_at}</span>,
+      render: (r) => <span className="text-[14px] leading-[1.45] text-[#777777]">{formatDateTime(r.scanned_at)}</span>,
     },
   ];
 

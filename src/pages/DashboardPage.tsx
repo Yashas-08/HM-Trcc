@@ -10,14 +10,7 @@ import {
   RoomOccupancyDonut,
 } from '../components/ui/DashboardCharts';
 import { ErrorBanner, LoadingState } from '../components/ui/States';
-
-function formatDisplayDate(iso: string): string {
-  const [y, m, d] = iso.split('-').map(Number);
-  const dt = new Date(y, (m || 1) - 1, d || 1);
-  return dt
-    .toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-    .replace(/ /g, '-');
-}
+import { formatDate } from '../utils/date';
 
 function shiftDate(iso: string, delta: number): string {
   const [y, m, d] = iso.split('-').map(Number);
@@ -111,7 +104,7 @@ export const DashboardPage: React.FC = () => {
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <span className="font-medium text-[#292929] min-w-[104px] text-center">
-                  {formatDisplayDate(data.attendanceDate)}
+                  {formatDate(data.attendanceDate)}
                 </span>
                 <button
                   type="button"
@@ -132,6 +125,7 @@ export const DashboardPage: React.FC = () => {
               <table className="w-full border-collapse text-left">
                 <thead>
                   <tr className="border-b border-[#E9E9E9]">
+                    <th className="py-3 px-2 text-[15px] font-semibold leading-[1.35] text-[#292929] w-[44px]">#</th>
                     <th className="py-3 text-[15px] font-semibold leading-[1.35] text-[#292929]">Name</th>
                     <th className="py-3 text-[15px] font-semibold leading-[1.35] text-[#292929]">Room no</th>
                     <th className="py-3 text-[15px] font-semibold leading-[1.35] text-[#292929]">Check in</th>
@@ -142,12 +136,13 @@ export const DashboardPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E9E9E9]">
-                  {data.attendanceRows.map((row) => (
+                  {data.attendanceRows.map((row, index) => (
                     <tr
                       key={row.student_id}
                       onClick={() => navigate('/movements')}
                       className="cursor-pointer hover:bg-[#FAFAFA] transition-colors"
                     >
+                      <td className="py-3.5 px-2 text-[14px] font-semibold text-[#777777]">{index + 1}</td>
                       <td className="py-3.5 text-[16px] leading-[1.45] text-[#292929] font-medium">{row.full_name}</td>
                       <td className="py-3.5 text-[16px] leading-[1.45] text-[#777777]">{row.room_number}</td>
                       <td className="py-3.5 text-[16px] leading-[1.45] text-[#777777]">{row.check_in_time}</td>

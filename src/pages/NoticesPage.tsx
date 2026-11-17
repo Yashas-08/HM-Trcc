@@ -7,6 +7,7 @@ import { StatCard } from '../components/ui/StatCard';
 import { Modal } from '../components/ui/Modal';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { EmptyState, ErrorBanner, LoadingState } from '../components/ui/States';
+import { formatDate } from '../utils/date';
 
 interface NoticeRow {
   id: number;
@@ -260,13 +261,16 @@ export const NoticesPage: React.FC = () => {
         />
       ) : (
         <div className="space-y-3">
-          {notices.map((n) => (
+          {notices.map((n, index) => (
             <div
               key={n.id}
               className="bg-[#FFFFFF] border border-[#E9E9E9] rounded-[12px] p-5 flex items-start justify-between gap-6"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-3 mb-1.5">
+                  <span className="font-semibold text-[#777777] text-[13px]">
+                    #{index + 1}
+                  </span>
                   <span className="text-[13px] font-semibold uppercase tracking-wide px-2.5 py-0.5 rounded bg-[#F4F4F4] text-[#292929]">
                     {n.category}
                   </span>
@@ -287,7 +291,7 @@ export const NoticesPage: React.FC = () => {
                 <p className="text-[16px] font-normal leading-[1.5] text-[#777777] mt-1">{n.description}</p>
                 <div className="flex items-center gap-4 mt-2.5 text-[14px] leading-[1.45] text-[#777777]">
                   <span>Author: {n.author_name || 'Admin'}</span>
-                  {n.publish_at ? <span>Publish Date: {n.publish_at.replace('T', ' ')}</span> : null}
+                  {n.publish_at ? <span>Publish Date: {formatDate(n.publish_at)}</span> : null}
                   {n.attachment_url ? (
                     <a
                       href={n.attachment_url}

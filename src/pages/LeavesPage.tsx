@@ -7,6 +7,7 @@ import { StatCard } from '../components/ui/StatCard';
 import { DataTable, type TableColumn } from '../components/ui/DataTable';
 import { Modal } from '../components/ui/Modal';
 import { EmptyState, ErrorBanner, LoadingState } from '../components/ui/States';
+import { formatDateTime } from '../utils/date';
 
 interface LeaveRow {
   id: number;
@@ -200,9 +201,10 @@ export const LeavesPage: React.FC = () => {
 
   const columns: TableColumn<LeaveRow>[] = [
     {
-      key: 'leave_code',
-      header: 'Leave ID',
-      render: (r) => <span className="font-mono text-[14px] text-[#777777]">{r.leave_code}</span>,
+      key: 'serial',
+      header: 'S.No',
+      width: '64px',
+      render: (_r, index) => <span className="font-semibold text-[#777777] text-[14px]">{index + 1}</span>,
     },
     {
       key: 'student',
@@ -231,8 +233,8 @@ export const LeavesPage: React.FC = () => {
       header: 'Schedule',
       render: (r) => (
         <div className="text-[14px] leading-[1.45]">
-          <div>Out: {r.departure_at.replace('T', ' ')}</div>
-          <div className="text-[#777777]">Exp: {r.expected_return_at.replace('T', ' ')}</div>
+          <div>Out: {formatDateTime(r.departure_at)}</div>
+          <div className="text-[#777777]">Exp: {formatDateTime(r.expected_return_at)}</div>
         </div>
       ),
     },
@@ -384,7 +386,7 @@ export const LeavesPage: React.FC = () => {
       <Modal
         open={Boolean(selectedLeave)}
         onClose={() => setSelectedLeave(null)}
-        title={selectedLeave ? `Leave Application ${selectedLeave.leave_code}` : ''}
+        title={selectedLeave ? 'Leave Application Details' : ''}
         subtitle={
           selectedLeave
             ? `${selectedLeave.student_name} (${selectedLeave.student_code}) · Room ${selectedLeave.room_number}`
@@ -409,19 +411,19 @@ export const LeavesPage: React.FC = () => {
               </div>
               <div>
                 <div className="text-[13px] font-semibold uppercase tracking-wide text-[#777777]">Planned Departure</div>
-                <div className="mt-0.5">{selectedLeave.departure_at.replace('T', ' ')}</div>
+                <div className="mt-0.5">{formatDateTime(selectedLeave.departure_at)}</div>
               </div>
               <div>
                 <div className="text-[13px] font-semibold uppercase tracking-wide text-[#777777]">Expected Return</div>
-                <div className="mt-0.5">{selectedLeave.expected_return_at.replace('T', ' ')}</div>
+                <div className="mt-0.5">{formatDateTime(selectedLeave.expected_return_at)}</div>
               </div>
               <div>
                 <div className="text-[13px] font-semibold uppercase tracking-wide text-[#777777]">Actual Departure</div>
-                <div className="mt-0.5">{selectedLeave.actual_departure_at?.replace('T', ' ') || 'Not recorded'}</div>
+                <div className="mt-0.5">{selectedLeave.actual_departure_at ? formatDateTime(selectedLeave.actual_departure_at) : 'Not recorded'}</div>
               </div>
               <div>
                 <div className="text-[13px] font-semibold uppercase tracking-wide text-[#777777]">Actual Return</div>
-                <div className="mt-0.5">{selectedLeave.actual_return_at?.replace('T', ' ') || 'Not recorded'}</div>
+                <div className="mt-0.5">{selectedLeave.actual_return_at ? formatDateTime(selectedLeave.actual_return_at) : 'Not recorded'}</div>
               </div>
             </div>
 
@@ -504,7 +506,7 @@ export const LeavesPage: React.FC = () => {
       <Modal
         open={Boolean(rejectTarget)}
         onClose={() => setRejectTarget(null)}
-        title={`Reject Leave ${rejectTarget?.leave_code || ''}`}
+        title="Reject Leave Application"
         maxWidth="sm"
         footer={
           <>

@@ -756,10 +756,13 @@ export const RoomsPage: React.FC = () => {
                 </p>
               ) : (
                 <div className="divide-y divide-[#E9E9E9] border border-[#E9E9E9] rounded-[8px]">
-                  {detailRoom.occupants.map((occ) => (
+                  {detailRoom.occupants.map((occ, index) => (
                     <div key={occ.allocation_id} className="px-4 py-3 flex items-center justify-between">
                       <div>
-                        <div className="text-[16px] font-semibold text-[#292929]">{occ.full_name}</div>
+                        <div className="text-[16px] font-semibold text-[#292929]">
+                          <span className="text-[#777777] font-semibold text-[14px] mr-2">#{index + 1}</span>
+                          {occ.full_name}
+                        </div>
                         <div className="text-[14px] leading-[1.45] text-[#777777]">
                           {occ.student_code} · {occ.bed_label} · {occ.phone}
                         </div>

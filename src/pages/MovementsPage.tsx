@@ -7,6 +7,7 @@ import { StatCard } from '../components/ui/StatCard';
 import { DataTable, type TableColumn } from '../components/ui/DataTable';
 import { Modal } from '../components/ui/Modal';
 import { EmptyState, ErrorBanner, LoadingState } from '../components/ui/States';
+import { formatDate, formatDateTime } from '../utils/date';
 
 interface MovementRow {
   id: number;
@@ -169,6 +170,12 @@ export const MovementsPage: React.FC = () => {
 
   const movementCols: TableColumn<MovementRow>[] = [
     {
+      key: 'serial',
+      header: 'S.No',
+      width: '64px',
+      render: (_r, index) => <span className="font-semibold text-[#777777] text-[14px]">{index + 1}</span>,
+    },
+    {
       key: 'student',
       header: 'Student',
       render: (r) => (
@@ -182,27 +189,27 @@ export const MovementsPage: React.FC = () => {
     },
     {
       key: 'leave',
-      header: 'Linked Leave',
+      header: 'Leave Status',
       render: (r) => (
-        <span className="font-mono text-[14px] text-[#777777]">{r.leave_code || 'Gate Pass'}</span>
+        <span className="font-medium text-[14px] text-[#292929]">{r.leave_code ? 'Approved Leave' : 'Gate Pass'}</span>
       ),
     },
     {
       key: 'exit',
       header: 'Exit Time',
-      render: (r) => <span className="text-[16px] leading-[1.45]">{r.exit_time.replace('T', ' ')}</span>,
+      render: (r) => <span className="text-[16px] leading-[1.45]">{formatDateTime(r.exit_time)}</span>,
     },
     {
       key: 'expected',
       header: 'Expected Return',
-      render: (r) => <span className="text-[16px] leading-[1.45]">{r.expected_return_time.replace('T', ' ')}</span>,
+      render: (r) => <span className="text-[16px] leading-[1.45]">{formatDateTime(r.expected_return_time)}</span>,
     },
     {
       key: 'actual',
       header: 'Actual Return',
       render: (r) => (
         <span className="text-[16px] leading-[1.45] text-[#777777]">
-          {r.actual_return_time ? r.actual_return_time.replace('T', ' ') : '--'}
+          {r.actual_return_time ? formatDateTime(r.actual_return_time) : '--'}
         </span>
       ),
     },
@@ -320,6 +327,9 @@ export const MovementsPage: React.FC = () => {
               onChange={(e) => setAttendanceDate(e.target.value)}
               className="h-[40px] px-3 text-[16px] font-normal leading-[1.45] border border-[#E9E9E9] rounded-[8px]"
             />
+            <span className="text-[14px] font-semibold text-[#777777] bg-[#F4F4F4] px-2.5 py-1 rounded-[6px]">
+              {formatDate(attendanceDate)}
+            </span>
             {can('movements', 'edit') ? (
               <button
                 type="button"
@@ -352,6 +362,7 @@ export const MovementsPage: React.FC = () => {
           <table className="w-full border-collapse text-left">
             <thead>
               <tr className="border-b border-[#E9E9E9] text-[15px] font-semibold leading-[1.4] text-[#292929]">
+                <th className="py-3 px-3 w-[56px] text-center">#</th>
                 <th className="py-3 px-4">Student</th>
                 <th className="py-3 px-4">Room No</th>
                 <th className="py-3 px-4">Check In</th>
@@ -361,8 +372,9 @@ export const MovementsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E9E9E9] text-[16px] leading-[1.45]">
-              {draftAttendance.map((row) => (
+              {draftAttendance.map((row, index) => (
                 <tr key={row.student_id}>
+                  <td className="py-2.5 px-3 text-center font-semibold text-[#777777] text-[14px]">{index + 1}</td>
                   <td className="py-2.5 px-4">
                     <div className="font-semibold">{row.full_name}</div>
                     <div className="text-[14px] leading-[1.45] text-[#777777]">{row.student_code}</div>

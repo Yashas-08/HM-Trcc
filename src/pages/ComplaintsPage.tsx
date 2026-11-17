@@ -14,6 +14,7 @@ import { StatCard } from '../components/ui/StatCard';
 import { DataTable, type TableColumn } from '../components/ui/DataTable';
 import { Modal } from '../components/ui/Modal';
 import { EmptyState, ErrorBanner, LoadingState } from '../components/ui/States';
+import { formatDate, formatDateTime } from '../utils/date';
 
 const CATEGORIES = [
   'Electrical',
@@ -244,9 +245,10 @@ export const ComplaintsPage: React.FC = () => {
 
   const columns: TableColumn<ComplaintRow>[] = [
     {
-      key: 'code',
-      header: 'Ticket ID',
-      render: (r) => <span className="font-mono text-[14px] text-[#777777]">{r.complaint_code}</span>,
+      key: 'serial',
+      header: 'S.No',
+      width: '64px',
+      render: (_r, index) => <span className="font-semibold text-[#777777] text-[14px]">{index + 1}</span>,
     },
     {
       key: 'title',
@@ -390,10 +392,10 @@ export const ComplaintsPage: React.FC = () => {
       <Modal
         open={Boolean(selected)}
         onClose={() => setSelected(null)}
-        title={selected ? `${selected.complaint_code} — ${selected.title}` : ''}
+        title={selected ? selected.title : ''}
         subtitle={
           selected
-            ? `${selected.category} · ${selected.student_name} (Room ${selected.room_number}) · Submitted ${selected.created_at.slice(0, 10)}`
+            ? `${selected.category} · ${selected.student_name} (Room ${selected.room_number}) · Submitted ${formatDate(selected.created_at)}`
             : ''
         }
         maxWidth="lg"
@@ -519,7 +521,7 @@ export const ComplaintsPage: React.FC = () => {
                     <div key={i} className="p-3 bg-[#F9F9F9] border border-[#E9E9E9] rounded-[8px]">
                       <div className="flex items-center justify-between text-[14px] leading-[1.4] text-[#777777]">
                         <strong className="text-[#292929] font-semibold">{r.author}</strong>
-                        <span>{r.at.replace('T', ' ')}</span>
+                        <span>{formatDateTime(r.at)}</span>
                       </div>
                       <p className="text-[16px] leading-[1.45] mt-1">{r.text}</p>
                     </div>

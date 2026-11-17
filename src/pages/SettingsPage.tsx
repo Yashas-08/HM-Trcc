@@ -5,6 +5,7 @@ import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { PageHeader } from '../components/ui/PageHeader';
 import { ErrorBanner, LoadingState } from '../components/ui/States';
+import { formatDateTime } from '../utils/date';
 
 type SettingsTab = 'profile' | 'hostel' | 'access' | 'notifications' | 'system' | 'logs';
 
@@ -704,15 +705,16 @@ export const SettingsPage: React.FC = () => {
                 />
               </div>
               <div className="border border-[#E9E9E9] rounded-[10px] divide-y divide-[#E9E9E9] max-h-[460px] overflow-y-auto text-[16px] leading-[1.5]">
-                {filteredLogs.map((l) => (
+                {filteredLogs.map((l, index) => (
                   <div key={l.id} className="px-4 py-3 flex items-center justify-between gap-4">
                     <div>
+                      <span className="font-semibold text-[#777777] text-[13px] mr-2">#{index + 1}</span>
                       <span className="font-semibold text-[#292929]">{l.user_name}</span>
                       <span className="text-[#777777] mx-2">·</span>
                       <span className="font-mono text-[13px] uppercase text-[#777777]">{l.module}</span>
                       <div className="text-[#292929] mt-0.5">{l.details || l.action}</div>
                     </div>
-                    <span className="text-[14px] text-[#777777] shrink-0">{l.created_at}</span>
+                    <span className="text-[14px] text-[#777777] shrink-0">{formatDateTime(l.created_at)}</span>
                   </div>
                 ))}
               </div>

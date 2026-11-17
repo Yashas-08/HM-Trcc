@@ -9,6 +9,7 @@ import { DataTable, type TableColumn } from '../components/ui/DataTable';
 import { Modal } from '../components/ui/Modal';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { EmptyState, ErrorBanner, LoadingState } from '../components/ui/States';
+import { formatDateTime } from '../utils/date';
 
 const ROLE_OPTIONS: Array<{ value: UserRole; label: string }> = [
   { value: 'super_admin', label: 'Super Admin' },
@@ -258,10 +259,10 @@ export const StaffPage: React.FC = () => {
   const columns: TableColumn<StaffMember>[] = [
     {
       key: 'row_number',
-      header: '#',
-      width: '60px',
+      header: 'S.No',
+      width: '64px',
       render: (_r, index) => (
-        <span className="text-[#777777] tabular-nums">{String(index + 1).padStart(2, '0')}</span>
+        <span className="font-semibold text-[#777777] text-[14px]">{index + 1}</span>
       ),
     },
     {
@@ -621,10 +622,10 @@ export const StaffPage: React.FC = () => {
                 <p className="text-[14px] text-[#777777]">No complaints currently assigned.</p>
               ) : (
                 <div className="border border-[#E9E9E9] rounded-[8px] divide-y divide-[#E9E9E9]">
-                  {profile.assignedComplaints.map((c) => (
+                  {profile.assignedComplaints.map((c, index) => (
                     <div key={c.id} className="px-3.5 py-2.5 flex items-center justify-between">
                       <div>
-                        <span className="font-mono text-[14px] text-[#777777] mr-2">{c.complaint_code}</span>
+                        <span className="font-semibold text-[#777777] text-[14px] mr-2">#{index + 1}</span>
                         <span className="font-medium">{c.title}</span>
                       </div>
                       <span className="text-[14px] capitalize font-semibold">{c.status.replace('_', ' ')}</span>
@@ -645,7 +646,7 @@ export const StaffPage: React.FC = () => {
                   {profile.workHistory.map((w) => (
                     <div key={w.id} className="px-3.5 py-2.5 flex items-center justify-between gap-4">
                       <span>{w.details}</span>
-                      <span className="text-[14px] text-[#777777] shrink-0">{w.created_at}</span>
+                      <span className="text-[14px] text-[#777777] shrink-0">{formatDateTime(w.created_at)}</span>
                     </div>
                   ))}
                 </div>

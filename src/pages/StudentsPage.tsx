@@ -18,6 +18,7 @@ import { DataTable, type TableColumn } from '../components/ui/DataTable';
 import { Modal } from '../components/ui/Modal';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { EmptyState, ErrorBanner, LoadingState } from '../components/ui/States';
+import { formatDate, formatDateRange } from '../utils/date';
 
 interface StudentRow {
   id: number;
@@ -305,10 +306,10 @@ export const StudentsPage: React.FC = () => {
   const columns: TableColumn<StudentRow>[] = [
     {
       key: 'row_number',
-      header: '#',
-      width: '60px',
+      header: 'S.No',
+      width: '64px',
       render: (_r, index) => (
-        <span className="text-[#777777] tabular-nums">{String(index + 1).padStart(2, '0')}</span>
+        <span className="font-semibold text-[#777777] text-[14px]">{index + 1}</span>
       ),
     },
     {
@@ -787,7 +788,7 @@ export const StudentsPage: React.FC = () => {
                   <div><span className="text-[#777777]">DOB / Gender:</span> {profileDetail.student.dob || '--'} / {profileDetail.student.gender}</div>
                   <div><span className="text-[#777777]">College:</span> {profileDetail.student.college_name || '--'}</div>
                   <div><span className="text-[#777777]">Course & Year:</span> {profileDetail.student.course || '--'} ({profileDetail.student.year_of_study || '--'})</div>
-                  <div><span className="text-[#777777]">Admitted:</span> {profileDetail.student.admission_date}</div>
+                  <div><span className="text-[#777777]">Admitted:</span> {formatDate(profileDetail.student.admission_date)}</div>
                 </div>
                 <div className="border border-[#E9E9E9] rounded-[10px] p-4 space-y-2">
                   <div className="font-slab text-[15px] font-normal uppercase tracking-wide text-[#777777]">Guardian & Room Allocation</div>
@@ -813,7 +814,7 @@ export const StudentsPage: React.FC = () => {
                 ) : (
                   profileDetail.attendanceHistory.map((a) => (
                     <div key={a.id} className="py-2.5 flex items-center justify-between">
-                      <span>{a.attendance_date}</span>
+                      <span>{formatDate(a.attendance_date)}</span>
                       <span className="text-[14px] text-[#777777]">In: {a.check_in_time || '--'} · Out: {a.check_out_time || '--'}</span>
                       <span className="text-[14px] font-semibold capitalize">{a.status.replace('_', ' ')}</span>
                     </div>
@@ -827,13 +828,13 @@ export const StudentsPage: React.FC = () => {
                 {profileDetail.leaveHistory.length === 0 ? (
                   <p className="py-6 text-center text-[14px] text-[#777777]">No leave requests recorded.</p>
                 ) : (
-                  profileDetail.leaveHistory.map((l) => (
+                  profileDetail.leaveHistory.map((l, index) => (
                     <div key={l.id} className="py-2.5 flex items-center justify-between gap-4">
                       <div>
-                        <span className="font-mono text-[14px] text-[#777777] mr-2">{l.leave_code}</span>
+                        <span className="font-semibold text-[#777777] text-[14px] mr-2">#{index + 1}</span>
                         <span className="font-medium">{l.reason}</span>
                       </div>
-                      <span className="text-[14px] text-[#777777]">{l.departure_at} → {l.expected_return_at}</span>
+                      <span className="text-[14px] text-[#777777]">{formatDateRange(l.departure_at, l.expected_return_at)}</span>
                       <span className="text-[14px] font-semibold capitalize">{l.status}</span>
                     </div>
                   ))
@@ -846,10 +847,10 @@ export const StudentsPage: React.FC = () => {
                 {profileDetail.complaintHistory.length === 0 ? (
                   <p className="py-6 text-center text-[14px] text-[#777777]">No complaints submitted.</p>
                 ) : (
-                  profileDetail.complaintHistory.map((c) => (
+                  profileDetail.complaintHistory.map((c, index) => (
                     <div key={c.id} className="py-2.5 flex items-center justify-between gap-4">
                       <div>
-                        <span className="font-mono text-[14px] text-[#777777] mr-2">{c.complaint_code}</span>
+                        <span className="font-semibold text-[#777777] text-[14px] mr-2">#{index + 1}</span>
                         <span className="font-medium">{c.title}</span>
                       </div>
                       <span className="text-[14px] text-[#777777]">{c.category}</span>
@@ -867,7 +868,7 @@ export const StudentsPage: React.FC = () => {
                 ) : (
                   profileDetail.mealHistory.map((m) => (
                     <div key={m.id} className="py-2.5 flex items-center justify-between">
-                      <span>{m.meal_date} · <strong className="capitalize">{m.meal_type}</strong></span>
+                      <span>{formatDate(m.meal_date)} · <strong className="capitalize">{m.meal_type}</strong></span>
                       <span className="font-mono text-[14px] text-[#777777]">{m.booking_code}</span>
                       <span className="text-[14px] font-semibold capitalize">{m.verified_status}</span>
                     </div>

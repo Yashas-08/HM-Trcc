@@ -7,6 +7,7 @@ import { api } from '../lib/api';
 import { PageHeader } from '../components/ui/PageHeader';
 import { StatCard } from '../components/ui/StatCard';
 import { ErrorBanner, LoadingState } from '../components/ui/States';
+import { formatDate, formatDateTime } from '../utils/date';
 
 type ReportDomain =
   | 'students'
@@ -143,19 +144,19 @@ export const ReportsPage: React.FC = () => {
         return {
           title: 'HM Trcc — Daily Attendance Trend',
           headers: ['Date', 'Present', 'Absent', 'On Leave'],
-          rows: data.attendance.trend.map((t) => [t.date, t.present, t.absent, t.on_leave]),
+          rows: data.attendance.trend.map((t) => [formatDate(t.date), t.present, t.absent, t.on_leave]),
         };
       case 'leaves':
         return {
           title: 'HM Trcc — Leave Applications Report',
-          headers: ['Leave ID', 'Student', 'Room', 'Reason', 'Departure', 'Expected Return', 'Status'],
-          rows: data.leaves.records.map((l) => [
-            l.leave_code,
+          headers: ['S.No', 'Student', 'Room', 'Reason', 'Departure', 'Expected Return', 'Status'],
+          rows: data.leaves.records.map((l, index) => [
+            index + 1,
             l.student_name,
             l.room_number,
             l.reason,
-            l.departure_at,
-            l.expected_return_at,
+            formatDateTime(l.departure_at),
+            formatDateTime(l.expected_return_at),
             l.status,
           ]),
         };
@@ -389,7 +390,7 @@ export const ReportsPage: React.FC = () => {
               <tbody className="divide-y divide-[#E9E9E9] text-[16px] font-normal leading-[1.45] text-[#292929]">
                 {data.attendance.trend.map((t) => (
                   <tr key={t.date}>
-                    <td className="py-3.5 px-4 font-medium">{t.date}</td>
+                    <td className="py-3.5 px-4 font-medium">{formatDate(t.date)}</td>
                     <td className="py-3.5 px-4 text-[#22A06B] font-semibold">{t.present}</td>
                     <td className="py-3.5 px-4 text-[#D9383A] font-semibold">{t.absent}</td>
                     <td className="py-3.5 px-4 text-[#C97A16] font-semibold">{t.on_leave}</td>
@@ -413,7 +414,7 @@ export const ReportsPage: React.FC = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-[#E9E9E9] text-[15px] font-semibold leading-[1.35] text-[#292929]">
-                  <th className="py-3.5 px-4">Leave ID</th>
+                  <th className="py-3.5 px-4 w-[60px]">S.No</th>
                   <th className="py-3.5 px-4">Student</th>
                   <th className="py-3.5 px-4">Room</th>
                   <th className="py-3.5 px-4">Reason</th>
@@ -421,9 +422,9 @@ export const ReportsPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E9E9E9] text-[16px] font-normal leading-[1.45] text-[#292929]">
-                {data.leaves.records.map((l) => (
+                {data.leaves.records.map((l, index) => (
                   <tr key={l.leave_code}>
-                    <td className="py-3.5 px-4 font-mono text-[14px] text-[#777777]">{l.leave_code}</td>
+                    <td className="py-3.5 px-4 font-semibold text-[14px] text-[#777777]">{index + 1}</td>
                     <td className="py-3.5 px-4 font-medium">{l.student_name}</td>
                     <td className="py-3.5 px-4">{l.room_number}</td>
                     <td className="py-3.5 px-4">{l.reason}</td>

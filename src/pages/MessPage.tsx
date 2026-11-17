@@ -20,6 +20,7 @@ import { Modal } from '../components/ui/Modal';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { EmptyState, ErrorBanner, LoadingState } from '../components/ui/States';
 import { RoomBox } from '../components/ui/RoomBox';
+import { formatDate } from '../utils/date';
 
 interface MealBooking {
   id: number;
@@ -276,6 +277,12 @@ export const MessPage: React.FC = () => {
   // Student Booking Table Columns
   const columns: TableColumn<MealBooking>[] = [
     {
+      key: 'serial',
+      header: 'S.No',
+      width: '64px',
+      render: (_r, index) => <span className="font-semibold text-[#777777] text-[14px]">{index + 1}</span>,
+    },
+    {
       key: 'student_name',
       header: 'Student Name',
       render: (r) => (
@@ -456,6 +463,9 @@ export const MessPage: React.FC = () => {
                 />
                 <Calendar className="w-4 h-4 text-[#777777] absolute left-3 top-3 pointer-events-none" />
               </div>
+              <span className="text-[14px] font-semibold text-[#777777] bg-[#F4F4F4] px-2.5 py-2 rounded-[7px]">
+                {formatDate(selectedDate)}
+              </span>
 
               <div className="flex items-center gap-1.5">
                 {[
@@ -529,7 +539,7 @@ export const MessPage: React.FC = () => {
                 <EmptyState
                   icon={Utensils}
                   title={`No ${mealType} bookings found`}
-                  description={`No rooms have bookings for ${mealType} on ${selectedDate}${
+                  description={`No rooms have bookings for ${mealType} on ${formatDate(selectedDate)}${
                     roomSearch.trim() ? ` matching "${roomSearch}"` : ''
                   }.`}
                 />
@@ -574,7 +584,7 @@ export const MessPage: React.FC = () => {
                     Room {selectedRoom.room_number}
                   </h2>
                   <span className="text-[13px] font-medium text-[#777777] bg-[#F4F4F4] px-2.5 py-0.5 rounded-[6px]">
-                    {selectedDate}
+                    {formatDate(selectedDate)}
                   </span>
                 </div>
               </div>
@@ -638,7 +648,7 @@ export const MessPage: React.FC = () => {
                 <EmptyState
                   icon={Utensils}
                   title={`No ${roomMealType} bookings`}
-                  description={`No students in Room ${selectedRoom.room_number} have booked ${roomMealType} for ${selectedDate}. Switch meals above to inspect other bookings.`}
+                  description={`No students in Room ${selectedRoom.room_number} have booked ${roomMealType} for ${formatDate(selectedDate)}. Switch meals above to inspect other bookings.`}
                 />
               </div>
             ) : (
@@ -728,7 +738,7 @@ export const MessPage: React.FC = () => {
         title="Meal Verification QR Code"
         subtitle={
           qrViewBooking
-            ? `${qrViewBooking.student_name} · ${qrViewBooking.meal_date} (${qrViewBooking.meal_type.toUpperCase()})`
+            ? `${qrViewBooking.student_name} · ${formatDate(qrViewBooking.meal_date)} (${qrViewBooking.meal_type.toUpperCase()})`
             : ''
         }
         maxWidth="sm"
