@@ -33,24 +33,24 @@ const NAV_GROUPS: Array<{ title: string; items: NavItem[] }> = [
       { label: 'Dashboard', to: '/', moduleKey: 'dashboard', icon: LayoutGrid },
       { label: 'Students', to: '/students', moduleKey: 'students', icon: Users },
       { label: 'Rooms', to: '/rooms', moduleKey: 'rooms', icon: BedDouble },
-      { label: 'Leave Management', to: '/leaves', moduleKey: 'leaves', icon: CalendarClock },
+      { label: 'Leaves', to: '/leaves', moduleKey: 'leaves', icon: CalendarClock },
       { label: 'Complaints', to: '/complaints', moduleKey: 'complaints', icon: MessageSquareWarning },
     ],
   },
   {
     title: 'OPERATIONS',
     items: [
-      { label: 'Mess Management', to: '/mess', moduleKey: 'mess', icon: Utensils },
-      { label: 'QR Scanner', to: '/qr-scanner', moduleKey: 'qr_scanner', icon: QrCode },
-      { label: 'Movement & Attendance', to: '/movements', moduleKey: 'movements', icon: Activity },
+      { label: 'Mess', to: '/mess', moduleKey: 'mess', icon: Utensils },
+      { label: 'Scanner', to: '/qr-scanner', moduleKey: 'qr_scanner', icon: QrCode },
+      { label: 'Attendance', to: '/movements', moduleKey: 'movements', icon: Activity },
       { label: 'Notices', to: '/notices', moduleKey: 'notices', icon: Megaphone },
     ],
   },
   {
     title: 'MANAGEMENT',
     items: [
-      { label: 'Staff Management', to: '/staff', moduleKey: 'staff', icon: ShieldCheck },
-      { label: 'Reports & Analytics', to: '/reports', moduleKey: 'reports', icon: BarChart3 },
+      { label: 'Staff', to: '/staff', moduleKey: 'staff', icon: ShieldCheck },
+      { label: 'Reports', to: '/reports', moduleKey: 'reports', icon: BarChart3 },
       { label: 'Settings', to: '/settings', moduleKey: 'settings', icon: Settings },
     ],
   },
@@ -95,8 +95,8 @@ export const Sidebar: React.FC = () => {
     const trackBox = trackEl.getBoundingClientRect();
     const next: PillRect = {
       top: activeBox.top - trackBox.top,
-      left: activeBox.left - trackBox.left,
-      width: activeBox.width,
+      left: 8,
+      width: Math.max(0, trackBox.width - 8),
       height: activeBox.height,
     };
 
@@ -155,7 +155,7 @@ export const Sidebar: React.FC = () => {
   return (
     <aside className="w-[238px] shrink-0 bg-[#222222] text-white flex flex-col h-screen select-none">
       {/* Brand Header */}
-      <div className="px-6 pt-6 pb-4 flex items-center gap-3">
+      <div className="pl-4 pr-6 pt-6 pb-4 flex items-center gap-3">
         <div className="relative w-7 h-7 flex items-center justify-center">
           <span className="absolute w-4 h-4 border-[1.75px] border-white rotate-45 -translate-x-1 rounded-[2px]" />
           <span className="absolute w-3.5 h-3.5 bg-[#DDF58A] rotate-45 translate-x-1 rounded-[2px]" />
@@ -186,7 +186,7 @@ export const Sidebar: React.FC = () => {
             if (visibleItems.length === 0) return null;
             return (
               <div key={group.title} className="mb-3">
-                <div className="px-5 py-1.5 text-[13px] font-semibold leading-[1.35] tracking-[0.08em] text-[#777777] uppercase">
+                <div className="pl-4 pr-3 py-1.5 text-[13px] font-semibold leading-[1.35] tracking-[0.08em] text-[#777777] uppercase">
                   {group.title}
                 </div>
                 <div className="space-y-0.5">
@@ -201,12 +201,14 @@ export const Sidebar: React.FC = () => {
                         to={item.to}
                         end={item.to === '/'}
                         className={({ isActive }) =>
-                          `relative z-10 ml-2 pl-2.5 pr-1.5 py-[9px] flex items-center gap-2 text-[16px] font-semibold leading-[1.35] transition-colors duration-300 ease-out ${
+                          `relative z-10 w-full pl-4 pr-3 py-[9px] flex items-center gap-3 text-[16px] font-semibold leading-[1.35] transition-colors duration-300 ease-out ${
                             isActive ? 'text-[#292929]' : 'text-[#CCCCCC] hover:text-white'
                           }`
                         }
                       >
-                        <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={1.9} />
+                        <span className="w-5 flex items-center justify-center shrink-0">
+                          <Icon className="w-[18px] h-[18px]" strokeWidth={1.9} />
+                        </span>
                         <span className="truncate">{item.label}</span>
                       </NavLink>
                     );
@@ -219,13 +221,15 @@ export const Sidebar: React.FC = () => {
       </nav>
 
       {/* Bottom Logout */}
-      <div className="px-4 py-4 border-t border-white/10">
+      <div className="py-4 border-t border-white/10">
         <button
           type="button"
           onClick={logout}
-          className="w-full pl-3 pr-3 py-2.5 flex items-center gap-2.5 text-[16px] font-semibold leading-[1.35] text-[#CCCCCC] hover:text-white rounded-[10px] hover:bg-white/5 transition-colors"
+          className="w-full pl-4 pr-3 py-2.5 flex items-center gap-3 text-[16px] font-semibold leading-[1.35] text-[#CCCCCC] hover:text-white rounded-[10px] hover:bg-white/5 transition-colors"
         >
-          <LogOut className="w-[18px] h-[18px] shrink-0" strokeWidth={1.9} />
+          <span className="w-5 flex items-center justify-center shrink-0">
+            <LogOut className="w-[18px] h-[18px]" strokeWidth={1.9} />
+          </span>
           <span>Logout</span>
         </button>
       </div>
