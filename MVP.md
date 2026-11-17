@@ -292,12 +292,12 @@ Purpose: Manage meal menus, bookings and daily mess operations.
 - Total bookings.
 - Meals verified as served.
 
-### Meal Management
-- Breakfast menu.
-- Lunch menu.
-- Dinner menu.
-- Edit daily menu.
-- Publish menu.
+### Meal Bookings Management (Room-Based)
+- Date selection (Yesterday, Today, Tomorrow, Custom date).
+- Meal selection (Breakfast, Lunch, Dinner).
+- 3-column room grid with booking metrics.
+- Room detailed view with secondary meal selector and student bookings table.
+- QR code meal verification.
 
 ### Meal Booking Management
 Display three date categories:

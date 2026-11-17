@@ -225,24 +225,8 @@ export function seedDatabase(targetDb?: Database.Database): void {
       'Temporary screw tightened earlier, needs full latch replacement.', JSON.stringify([{ author: 'Warden', text: 'Reopened because latch came loose again.', at: `${today}T08:15` }]), null,
     );
 
-    // 8. Mess Menus (Yesterday, Today, Tomorrow)
-    const insertMenu = db.prepare(
-      'INSERT INTO mess_menus (menu_date, meal_type, items_text, is_published, published_by) VALUES (?, ?, ?, ?, ?)',
-    );
-    const menus = [
-      [yesterday, 'breakfast', 'Poha, Boiled Eggs, Banana, Masala Chai', 1],
-      [yesterday, 'lunch', 'Jeera Rice, Dal Tadka, Aloo Gobi, Chapati, Curd', 1],
-      [yesterday, 'dinner', 'Paneer Butter Masala, Veg Pulao, Roti, Gulab Jamun', 1],
-      [today, 'breakfast', 'Idli Sambar, Coconut Chutney, Sprouts, Coffee/Tea', 1],
-      [today, 'lunch', 'Steamed Rice, Rajma Masala, Bhindi Fry, Roti, Salad', 1],
-      [today, 'dinner', 'Chole Bhature / Roti, Pulao, Boondi Raita, Ice Cream', 1],
-      [tomorrow, 'breakfast', 'Aloo Paratha, Curd, Pickle, Seasonal Fruit, Tea', 1],
-      [tomorrow, 'lunch', 'Lemon Rice, Dal Fry, Mix Veg Curry, Chapati, Buttermilk', 1],
-      [tomorrow, 'dinner', 'Veg Biryani, Mirchi Ka Salan, Paneer Tikka, Sweet', 0],
-    ] as const;
-    for (const [date, meal, items, pub] of menus) {
-      insertMenu.run(date, meal, items, pub, messStaffId);
-    }
+    // 8. Mess Menus (deprecated, omitted)
+    // Legacy mess_menus table preserved without mock menu strings.
 
     // 9. Meal Bookings & QR Scans
     const insertBooking = db.prepare(
@@ -402,7 +386,7 @@ export function seedDatabase(targetDb?: Database.Database): void {
     );
     insertLog.run(wardenId, 'Priya Nair', 'warden', 'leaves', 'APPROVE_LEAVE', 'leave_request', 'LV-2026-101', 'Approved family wedding leave for Rohan Malhotra');
     insertLog.run(secStaffId, 'Vikram Singh', 'security_staff', 'movements', 'RECORD_EXIT', 'movement', String(studentIds[5]), 'Recorded exit for Meenakshi Iyer (Room 102)');
-    insertLog.run(messStaffId, 'Ramesh Kulkarni', 'mess_staff', 'mess', 'PUBLISH_MENU', 'mess_menu', today, 'Published today breakfast, lunch, and dinner menus');
+    insertLog.run(messStaffId, 'Ramesh Kulkarni', 'mess_staff', 'mess', 'VERIFY_MEAL', 'meal_booking', 'MB-101', 'Verified breakfast meal QR for student in Room 101');
     insertLog.run(adminId, 'Arjun Mehta', 'super_admin', 'rooms', 'MARK_MAINTENANCE', 'room', '402', 'Marked Room 402 under maintenance for plumbing work');
   });
 

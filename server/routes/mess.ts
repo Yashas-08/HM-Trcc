@@ -45,9 +45,8 @@ messRouter.get('/overview', requirePermission('mess', 'view'), (req, res) => {
     )
     .get();
 
-  const menus = db
-    .prepare('SELECT * FROM mess_menus WHERE menu_date IN (?, ?, ?) OR menu_date = ? ORDER BY menu_date ASC')
-    .all(yesterday, today, tomorrow, targetDate);
+  // Menus are deprecated and removed from UI; return empty array for backwards compatibility
+  const menus: unknown[] = [];
 
   const conds = ['mb.meal_date = ?'];
   const params: Array<string | number> = [targetDate];
